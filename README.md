@@ -91,6 +91,23 @@ JARVIS MCP is built on the [MCP Go framework](https://github.com/mark3labs/mcp-g
 2. **Command Execution**: Running system commands in a controlled manner
 3. **Response Formatting**: Providing structured, informative responses
 
+### Project Structure
+
+```
+jarvis-mcp/
+├── build.sh                  # Build script
+├── cmd/                      # Application entry points
+│   └── jarvis/               # Main JARVIS MCP application
+│       └── main.go           # Application entry point
+├── pkg/                      # Library packages
+│   └── shell/                # Shell command execution package
+│       └── shell.go          # Command execution logic
+├── go.mod                    # Go module definition
+├── go.sum                    # Go module checksums
+└── out/                      # Build outputs (gitignored)
+    └── jarvis-mcp            # Compiled binary
+```
+
 ## Security Considerations
 
 JARVIS MCP provides direct access to execute commands on the local system. Consider the following security practices:
@@ -101,17 +118,6 @@ JARVIS MCP provides direct access to execute commands on the local system. Consi
 - Be cautious about which directories you allow command execution in
 
 ## Development
-
-### Project Structure
-
-```
-jarvis-mcp/
-├── build.sh        # Build script
-├── go.mod          # Go module definition
-├── go.sum          # Go module checksums
-├── main.go         # Main application code
-└── out/            # Build outputs (gitignored)
-```
 
 ### Adding New Tools
 
@@ -130,6 +136,10 @@ newTool := mcp.NewTool("tool_name",
 // Register the tool with a handler
 mcpServer.AddTool(newTool, toolHandler)
 ```
+
+## License
+
+[Specify your license here]
 
 ## Acknowledgements
 

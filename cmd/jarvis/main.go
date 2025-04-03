@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
-	"os/exec"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+
+	"jarvis_mcp/pkg/shell"
 )
 
 func main() {
@@ -45,39 +45,15 @@ func executeCommandHandler(ctx context.Context, request mcp.CallToolRequest) (*m
 		return nil, errors.New("command must be a string")
 	}
 
-	command := exec.Command("sh", "-c", cmd)
-	command.Env = os.Environ() // Explicitly copy the current
-
-	if workDir, ok := request.Params.Arguments["working directory"].(string); ok && workDir != "" {
-		dirInfo, err := os.Stat(workDir)
-		if err != nil {
-			if os.IsNotExist(err) {
-				return nil, fmt.Errorf("Path '%s' does not exist\n", workDir)
-			}
-			return nil, fmt.Errorf("Error checking path: %v\n", err)
-		}
-
-		if !dirInfo.IsDir() {
-			return nil, fmt.Errorf("'%s' is not a directory", workDir)
-		}
-
-		command.Dir = workDir
+	workDir := ""
+	if workDirVal, ok := request.Params.Arguments["working directory"].(string); ok {
+		workDir = workDirVal
 	}
 
-	// Execute command and capture output
-	output, err := command.CombinedOutput()
-	outputStr := string(output)
-
-	// Format the response
-	var resultText string
+	result, err := shell.ExecuteCommand(cmd, workDir)
 	if err != nil {
-		// Return both the error and any output
-		resultText = fmt.Sprintf("Command failed: %s\n\nOutput:\n%s\n\nError: %v",
-			cmd, outputStr, err)
-	} else {
-		resultText = fmt.Sprintf("Command executed successfully: %s\n\nOutput:\n%s",
-			cmd, outputStr)
+		return nil, err
 	}
 
-	return mcp.NewToolResultText(resultText), nil
+	return mcp.NewToolResultText(result), nil
 }

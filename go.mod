@@ -1,4 +1,4 @@
-module mcp-test
+module jarvis_mcp
 
 go 1.24.1
 
