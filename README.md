@@ -131,10 +131,6 @@ newTool := mcp.NewTool("tool_name",
 mcpServer.AddTool(newTool, toolHandler)
 ```
 
-## License
-
-[Specify your license here]
-
 ## Acknowledgements
 
 - Built with the [MCP Go framework](https://github.com/mark3labs/mcp-go)
