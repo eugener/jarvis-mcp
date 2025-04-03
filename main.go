@@ -14,19 +14,9 @@ import (
 func main() {
 	// Create MCP server
 	mcpServer := server.NewMCPServer(
-		"mcp-test",
+		"jarvis-mcp",
 		"1.0.0",
 	)
-
-	// Add tool
-	// tool := mcp.NewTool("hello_world",
-	// 	mcp.WithDescription("Say hello to someone"),
-	// 	mcp.WithString("name",
-	// 		mcp.Required(),
-	// 		mcp.Description("Name of the person to greet"),
-	// 	),
-	// )
-	// mcpServer.AddTool(tool, helloHandler)
 
 	cmdTool := mcp.NewTool("execute_command",
 		mcp.WithDescription("Execute OS command"),
@@ -45,15 +35,6 @@ func main() {
 		fmt.Printf("Server error: %v\n", err)
 	}
 }
-
-// func helloHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-// 	name, ok := request.Params.Arguments["name"].(string)
-// 	if !ok {
-// 		return nil, errors.New("name must be a string")
-// 	}
-
-// 	return mcp.NewToolResultText(fmt.Sprintf("Hello, %s!", name)), nil
-// }
 
 // executeCommandHandler executes OS commands specified by the user and returns the command output.
 // It takes the command string from the request parameters, runs it via the shell, and handles

@@ -1,3 +1,3 @@
 mkdir -p out
-go build -o out/mcp-test .
-chmod +x ./out/mcp-test
+go build -o out/jarvis-mcp .
+chmod +x ./out/jarvis-mcp
