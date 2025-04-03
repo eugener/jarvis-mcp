@@ -19,14 +19,14 @@ func main() {
 	)
 
 	// Add tool
-	tool := mcp.NewTool("hello_world",
-		mcp.WithDescription("Say hello to someone"),
-		mcp.WithString("name",
-			mcp.Required(),
-			mcp.Description("Name of the person to greet"),
-		),
-	)
-	mcpServer.AddTool(tool, helloHandler)
+	// tool := mcp.NewTool("hello_world",
+	// 	mcp.WithDescription("Say hello to someone"),
+	// 	mcp.WithString("name",
+	// 		mcp.Required(),
+	// 		mcp.Description("Name of the person to greet"),
+	// 	),
+	// )
+	// mcpServer.AddTool(tool, helloHandler)
 
 	cmdTool := mcp.NewTool("execute_command",
 		mcp.WithDescription("Execute OS command"),
@@ -46,14 +46,14 @@ func main() {
 	}
 }
 
-func helloHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	name, ok := request.Params.Arguments["name"].(string)
-	if !ok {
-		return nil, errors.New("name must be a string")
-	}
+// func helloHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+// 	name, ok := request.Params.Arguments["name"].(string)
+// 	if !ok {
+// 		return nil, errors.New("name must be a string")
+// 	}
 
-	return mcp.NewToolResultText(fmt.Sprintf("Hello, %s!", name)), nil
-}
+// 	return mcp.NewToolResultText(fmt.Sprintf("Hello, %s!", name)), nil
+// }
 
 func executeCommandHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	cmd, ok := request.Params.Arguments["command"].(string)
@@ -65,6 +65,13 @@ func executeCommandHandler(ctx context.Context, request mcp.CallToolRequest) (*m
 	command.Env = os.Environ() // Explicitly copy the current
 
 	if workDir, ok := request.Params.Arguments["working directory"].(string); ok {
+		dirInfo, err := os.Stat(workDir)
+		if err != nil {
+			if os.IsNotExist(err) {
+				return nil, fmt.Errorf("Path '%s' does not exist\n", dirInfo)
+			}
+			return nil, fmt.Errorf("Error checking path: %v\n", err)
+		}
 		command.Dir = workDir
 	}
 
