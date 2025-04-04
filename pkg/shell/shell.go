@@ -10,7 +10,7 @@ import (
 // ExecuteCommand executes OS commands specified by the user and returns the command output.
 // It takes the command string and an optional working directory, runs the command via the shell,
 // and captures both stdout and stderr output.
-func ExecuteCommand(cmd string, workDir string) (string, error) {
+func executeCommand(cmd string, workDir string) (string, error) {
 	command := exec.Command("sh", "-c", cmd)
 	command.Env = os.Environ() // Explicitly copy the current environment
 
