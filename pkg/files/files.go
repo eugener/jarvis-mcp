@@ -1,9 +1,13 @@
 package files
 
 import (
+	"fmt"
+	"jarvis_mcp/pkg/utils"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/samber/lo"
 )
 
 // normalizePath takes a path string, resolves any home directory references (~),
@@ -88,12 +92,6 @@ func readFiles(paths []string) ([]string, error) {
 // createDirectory creates a directory at the specified path with appropriate permissions.
 // Returns an error if the directory cannot be created.
 func createDirectory(path string) error {
-	// Validate and normalize the directory path
-	path, err := normalizePath(path)
-	if err != nil {
-		return err
-	}
-
 	// Create the directory with appropriate permissions
 	// 0755 = drwxr-xr-x (owner can read/write/execute, group/others can read/execute)
 	return os.Mkdir(path, 0755)
@@ -114,19 +112,12 @@ func listDirectory(path string) ([]string, error) {
 		return nil, err
 	}
 
-	// Pre-allocate the slice with the exact capacity needed
-	names := make([]string, 0, len(files))
-
 	// Extract the names of the files and directories
-	for _, file := range files {
-		var prefix string
-		if file.IsDir() {
-			prefix = "[DIR]"
-		} else {
-			prefix = "[FILE]"
-		}
-		names = append(names, prefix+" "+file.Name())
-	}
+	names := lo.Map(files, func(file os.DirEntry, index int) string {
+		prefix := utils.IfElse(file.IsDir(), "[DIR]", "[FILE]")
+		return fmt.Sprintf("%s %s", prefix, file.Name())
+	})
+
 	return names, nil
 }
 
@@ -135,10 +126,6 @@ func listDirectory(path string) ([]string, error) {
 func moveFile(src, dst string) error {
 	// Validate and normalize the source and destination paths
 	src, err := normalizePath(src)
-	if err != nil {
-		return err
-	}
-	dst, err = normalizePath(dst)
 	if err != nil {
 		return err
 	}
@@ -162,15 +149,13 @@ func searchFiles(path string, pattern string) ([]string, error) {
 		return nil, err
 	}
 
-	// Pre-allocate the slice with the exact capacity needed
-	names := make([]string, 0, len(files))
-
-	// extract file names which include the pattern
-	for _, file := range files {
+	names := lo.FilterMap(files, func(file os.DirEntry, index int) (string, bool) {
 		if strings.Contains(file.Name(), pattern) {
-			names = append(names, file.Name())
+			return file.Name(), true
 		}
-	}
+		return "", false
+	})
+
 	return names, nil
 }
 
