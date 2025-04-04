@@ -60,11 +60,6 @@ func readFile(path string) (string, error) {
 
 // writeFile writes the given content to a file at the specified path.
 func writeFile(path string, content string) error {
-	// Validate and normalize the file path
-	path, err := normalizePath(path)
-	if err != nil {
-		return err
-	}
 
 	// Ensure parent directory exists
 	dir := filepath.Dir(path)

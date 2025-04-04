@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"jarvis_mcp/pkg/files"
 	"jarvis_mcp/pkg/shell"
 
 	"github.com/mark3labs/mcp-go/server"
@@ -15,6 +16,7 @@ func main() {
 	)
 
 	shell.RegisterTools(mcpServer)
+	files.RegisterTools(mcpServer)
 
 	// Start the stdio server
 	if err := server.ServeStdio(mcpServer); err != nil {
