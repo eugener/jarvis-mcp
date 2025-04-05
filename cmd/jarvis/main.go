@@ -15,10 +15,17 @@ func main() {
 		"1.0.0",
 	)
 
+	// shell tools
 	mcpServer.AddTool(shell.GetExecuteCommand())
 
+	// file system tools
 	mcpServer.AddTool(files.GetReadFile())
 	mcpServer.AddTool(files.GetWriteFile())
+	mcpServer.AddTool(files.GetCreateDirectory())
+	mcpServer.AddTool(files.GetListDirectory())
+	mcpServer.AddTool(files.GetMoveFile())
+	mcpServer.AddTool(files.GetSearchFiles())
+	mcpServer.AddTool(files.GetFileInfo())
 
 	// Start the stdio server
 	if err := server.ServeStdio(mcpServer); err != nil {
