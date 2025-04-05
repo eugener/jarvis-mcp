@@ -8,20 +8,19 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func RegisterTools(mcpServer *server.MCPServer) {
+func GetReadFile() (tool mcp.Tool, handler server.ToolHandlerFunc) {
 
-	// read_file
-	cmdTool := mcp.NewTool("read_file",
+	return mcp.NewTool("read_file",
 		mcp.WithDescription("Read file, given the path"),
 		mcp.WithString("path",
 			mcp.Required(),
 			mcp.Description("Path for the file name to read"),
 		),
-	)
-	mcpServer.AddTool(cmdTool, readFileHandler)
+	), readFileHandler
+}
 
-	// write_file
-	cmdTool = mcp.NewTool("write_file",
+func GetWriteFile() (tool mcp.Tool, handler server.ToolHandlerFunc) {
+	return mcp.NewTool("write_file",
 		mcp.WithDescription("Write file, given the path"),
 		mcp.WithString("path",
 			mcp.Required(),
@@ -31,9 +30,7 @@ func RegisterTools(mcpServer *server.MCPServer) {
 			mcp.Required(),
 			mcp.Description("Content to write to the file"),
 		),
-	)
-	mcpServer.AddTool(cmdTool, writeFileHandler)
-
+	), writeFileHandler
 }
 
 func readFileHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {

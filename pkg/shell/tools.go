@@ -8,9 +8,9 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func RegisterTools(mcpServer *server.MCPServer) {
-
-	cmdTool := mcp.NewTool("execute_command",
+// GetExecuteCommand returns the tool and handler for executing OS commands.
+func GetExecuteCommand() (tool mcp.Tool, handler server.ToolHandlerFunc) {
+	return mcp.NewTool("execute_command",
 		mcp.WithDescription("Execute OS command"),
 		mcp.WithString("command",
 			mcp.Required(),
@@ -19,9 +19,7 @@ func RegisterTools(mcpServer *server.MCPServer) {
 		mcp.WithString("working directory",
 			mcp.Description("Working directory for the command"),
 		),
-	)
-	mcpServer.AddTool(cmdTool, executeCommandHandler)
-	// Register tools here
+	), executeCommandHandler
 }
 
 // executeCommandHandler executes OS commands specified by the user and returns the command output.

@@ -8,13 +8,6 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-type ToolRegistrator = func(mcpServer *server.MCPServer)
-
-var registrators = []ToolRegistrator{
-	shell.RegisterTools,
-	files.RegisterTools,
-}
-
 func main() {
 	// Create MCP server
 	mcpServer := server.NewMCPServer(
@@ -22,9 +15,10 @@ func main() {
 		"1.0.0",
 	)
 
-	for _, registerTool := range registrators {
-		registerTool(mcpServer)
-	}
+	mcpServer.AddTool(shell.GetExecuteCommand())
+
+	mcpServer.AddTool(files.GetReadFile())
+	mcpServer.AddTool(files.GetWriteFile())
 
 	// Start the stdio server
 	if err := server.ServeStdio(mcpServer); err != nil {
