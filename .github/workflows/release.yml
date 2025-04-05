@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  release:
+    types: [ created ]
+
+jobs:
+  build:
+    name: Build Executables
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: windows
+            arch: amd64
+            extension: .exe
+            name: windows-amd64
+          - os: darwin
+            arch: amd64
+            extension: ''
+            name: macos-intel
+          - os: darwin
+            arch: arm64
+            extension: ''
+            name: macos-apple-silicon
+          - os: linux
+            arch: amd64
+            extension: ''
+            name: linux-amd64
+          - os: linux
+            arch: arm64
+            extension: ''
+            name: linux-arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+          check-latest: true
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+        run: |
+          go build -o jarvis-mcp-${{ matrix.name }}${{ matrix.extension }} -v ./cmd/jarvis
+          chmod +x jarvis-mcp-${{ matrix.name }}${{ matrix.extension }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: jarvis-mcp-${{ matrix.name }}
+          path: jarvis-mcp-${{ matrix.name }}${{ matrix.extension }}
+          retention-days: 7
+
+  publish:
+    name: Publish Release Assets
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -R ./artifacts
+
+      - name: Create release assets
+        run: |
+          mkdir -p ./release
+          cp ./artifacts/jarvis-mcp-windows-amd64/jarvis-mcp-windows-amd64.exe ./release/
+          cp ./artifacts/jarvis-mcp-macos-intel/jarvis-mcp-macos-intel ./release/
+          cp ./artifacts/jarvis-mcp-macos-apple-silicon/jarvis-mcp-macos-apple-silicon ./release/
+          cp ./artifacts/jarvis-mcp-linux-amd64/jarvis-mcp-linux-amd64 ./release/
+          cp ./artifacts/jarvis-mcp-linux-arm64/jarvis-mcp-linux-arm64 ./release/
+          cd ./release
+          zip -r jarvis-mcp-windows-amd64.zip jarvis-mcp-windows-amd64.exe
+          tar -czvf jarvis-mcp-macos-intel.tar.gz jarvis-mcp-macos-intel
+          tar -czvf jarvis-mcp-macos-apple-silicon.tar.gz jarvis-mcp-macos-apple-silicon
+          tar -czvf jarvis-mcp-linux-amd64.tar.gz jarvis-mcp-linux-amd64
+          tar -czvf jarvis-mcp-linux-arm64.tar.gz jarvis-mcp-linux-arm64
+
+      - name: Upload binaries to release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ./release/jarvis-mcp-windows-amd64.zip
+            ./release/jarvis-mcp-macos-intel.tar.gz
+            ./release/jarvis-mcp-macos-apple-silicon.tar.gz
+            ./release/jarvis-mcp-linux-amd64.tar.gz
+            ./release/jarvis-mcp-linux-arm64.tar.gz

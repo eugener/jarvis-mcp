@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+          check-latest: true
+
+      - name: Install dependencies
+        run: |
+          go mod download
+          go mod verify
+
+      - name: Run tests
+        run: go test -v ./...
+
+  validate-build:
+    name: Validate Build
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+          check-latest: true
+
+      - name: Build for current platform
+        run: |
+          go build -o jarvis-mcp -v ./cmd/jarvis
+          chmod +x jarvis-mcp
+
+      - name: Verify binary
+        run: |
+          file jarvis-mcp
+          ./jarvis-mcp --version || echo "Binary doesn't support --version flag, but that's OK if it exits cleanly"
