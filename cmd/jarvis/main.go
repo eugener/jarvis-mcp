@@ -26,6 +26,7 @@ func main() {
 	mcpServer.AddTool(files.GetMoveFile())
 	mcpServer.AddTool(files.GetSearchFiles())
 	mcpServer.AddTool(files.GetFileInfo())
+	mcpServer.AddTool(files.GetDirectoryTree())
 
 	// Start the stdio server
 	if err := server.ServeStdio(mcpServer); err != nil {

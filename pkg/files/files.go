@@ -1,6 +1,7 @@
 package files
 
 import (
+	"encoding/json"
 	"fmt"
 	"jarvis_mcp/pkg/utils"
 	"os"
@@ -182,4 +183,98 @@ func getFileInfo(path string) (map[string]any, error) {
 		"ModTime": info.ModTime(),
 		"IsDir":   info.IsDir(),
 	}, nil
+}
+
+// treeNode represents a node in the directory tree.
+type treeNode struct {
+	Name     string      `json:"name"`
+	Type     string      `json:"type"` // "file" or "directory"
+	Children []*treeNode `json:"children,omitempty"`
+}
+
+// directoryTree generates a recursive tree structure of files and directories starting from the given path.
+// Returns a JSON string representation of the directory tree and any error encountered.
+func directoryTree(path string) (string, error) {
+	// Validate and normalize the directory path
+	path, err := normalizePath(path)
+	if err != nil {
+		return "", err
+	}
+
+	// Get file info to check if it's a directory
+	info, err := os.Stat(path)
+	if err != nil {
+		return "", err
+	}
+
+	// Create the root node
+	root := &treeNode{
+		Name: info.Name(),
+		Type: utils.IfElse(info.IsDir(), "directory", "file"),
+	}
+
+	// If it's a file, just return the node
+	if !info.IsDir() {
+		jsonData, err := json.MarshalIndent(root, "", "  ")
+		if err != nil {
+			return "", fmt.Errorf("error marshaling tree to JSON: %v", err)
+		}
+		return string(jsonData), nil
+	}
+
+	// Build the tree recursively for directories
+	err = buildDirectoryTree(path, root)
+	if err != nil {
+		return "", err
+	}
+
+	// Marshal the tree to JSON
+	jsonData, err := json.MarshalIndent(root, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("error marshaling tree to JSON: %v", err)
+	}
+
+	return string(jsonData), nil
+}
+
+// buildDirectoryTree recursively builds the directory tree structure.
+func buildDirectoryTree(path string, node *treeNode) error {
+	// Read directory contents
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return err
+	}
+
+	// Initialize the children slice if it's a directory
+	if node.Type == "directory" && node.Children == nil {
+		node.Children = make([]*treeNode, 0)
+	}
+
+	// Process each entry
+	for _, entry := range entries {
+		// Skip hidden files/directories if needed
+		// if strings.HasPrefix(entry.Name(), ".") {
+		//     continue
+		// }
+
+		// Create a new node for this entry
+		childNode := &treeNode{
+			Name: entry.Name(),
+			Type: utils.IfElse(entry.IsDir(), "directory", "file"),
+		}
+
+		// If it's a directory, process it recursively
+		if entry.IsDir() {
+			childPath := filepath.Join(path, entry.Name())
+			err := buildDirectoryTree(childPath, childNode)
+			if err != nil {
+				return err
+			}
+		}
+
+		// Add the node to the parent's children
+		node.Children = append(node.Children, childNode)
+	}
+
+	return nil
 }

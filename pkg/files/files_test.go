@@ -1,6 +1,7 @@
 package files
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -295,6 +296,139 @@ func TestGetFileInfo(t *testing.T) {
 
 	if !reflect.DeepEqual(info, expected) {
 		t.Errorf("expected %v, got %v", expected, info)
+	}
+}
+
+func TestDirectoryTree(t *testing.T) {
+	// Create a temporary directory
+	tmpDir, err := os.MkdirTemp("", "testdir")
+	if err != nil {
+		t.Fatalf("failed to create temp directory: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create a nested directory structure
+	subDir1 := filepath.Join(tmpDir, "subdir1")
+	subDir2 := filepath.Join(tmpDir, "subdir2")
+	nestedDir := filepath.Join(subDir1, "nested")
+
+	// Create directories
+	os.Mkdir(subDir1, 0755)
+	os.Mkdir(subDir2, 0755)
+	os.Mkdir(nestedDir, 0755)
+
+	// Create some files
+	os.WriteFile(filepath.Join(tmpDir, "file1.txt"), []byte("content1"), 0644)
+	os.WriteFile(filepath.Join(subDir1, "file2.txt"), []byte("content2"), 0644)
+	os.WriteFile(filepath.Join(nestedDir, "file3.txt"), []byte("content3"), 0644)
+	os.WriteFile(filepath.Join(subDir2, "file4.txt"), []byte("content4"), 0644)
+
+	// Get directory tree using directoryTree function
+	treeJSON, err := directoryTree(tmpDir)
+	if err != nil {
+		t.Errorf("failed to get directory tree: %v", err)
+	}
+
+	// Parse the JSON result
+	var tree treeNode
+	err = json.Unmarshal([]byte(treeJSON), &tree)
+	if err != nil {
+		t.Errorf("failed to parse directory tree JSON: %v", err)
+	}
+
+	// Verify the tree structure
+	// 1. Check root properties
+	if filepath.Base(tmpDir) != tree.Name {
+		t.Errorf("expected root name to be %s, got %s", filepath.Base(tmpDir), tree.Name)
+	}
+	if tree.Type != "directory" {
+		t.Errorf("expected root type to be directory, got %s", tree.Type)
+	}
+	if len(tree.Children) != 3 { // subdir1, subdir2, file1.txt
+		t.Errorf("expected root to have 3 children, got %d", len(tree.Children))
+	}
+
+	// 2. Check if all expected files and directories are present
+	// The tree should contain 3 directories and 4 files total
+	var dirCount, fileCount int
+	var countNodesRecursive func(node *treeNode)
+
+	countNodesRecursive = func(node *treeNode) {
+		if node.Type == "directory" {
+			dirCount++
+			for _, child := range node.Children {
+				countNodesRecursive(child)
+			}
+		} else {
+			fileCount++
+		}
+	}
+
+	countNodesRecursive(&tree)
+
+	// Subtract 1 from dirCount to exclude the root directory
+	if dirCount-1 != 3 { // subdir1, subdir2, nested
+		t.Errorf("expected 3 directories, got %d", dirCount-1)
+	}
+	if fileCount != 4 { // file1.txt, file2.txt, file3.txt, file4.txt
+		t.Errorf("expected 4 files, got %d", fileCount)
+	}
+
+	// 3. Check for specific entries
+	// Find subdir1 and check if it has file2.txt and nested directory
+	var foundSubdir1, foundSubdir2, foundNested bool
+	var foundFile1, foundFile2, foundFile3, foundFile4 bool
+
+	for _, child := range tree.Children {
+		if child.Name == "subdir1" && child.Type == "directory" {
+			foundSubdir1 = true
+			for _, subChild := range child.Children {
+				if subChild.Name == "file2.txt" && subChild.Type == "file" {
+					foundFile2 = true
+				}
+				if subChild.Name == "nested" && subChild.Type == "directory" {
+					foundNested = true
+					for _, nestedChild := range subChild.Children {
+						if nestedChild.Name == "file3.txt" && nestedChild.Type == "file" {
+							foundFile3 = true
+						}
+					}
+				}
+			}
+		}
+		if child.Name == "subdir2" && child.Type == "directory" {
+			foundSubdir2 = true
+			for _, subChild := range child.Children {
+				if subChild.Name == "file4.txt" && subChild.Type == "file" {
+					foundFile4 = true
+				}
+			}
+		}
+		if child.Name == "file1.txt" && child.Type == "file" {
+			foundFile1 = true
+		}
+	}
+
+	if !foundSubdir1 {
+		t.Errorf("expected to find subdir1 directory")
+	}
+	if !foundSubdir2 {
+		t.Errorf("expected to find subdir2 directory")
+	}
+	if !foundNested {
+		t.Errorf("expected to find nested directory")
+	}
+	if !foundFile1 {
+		t.Errorf("expected to find file1.txt")
+	}
+	if !foundFile2 {
+		t.Errorf("expected to find file2.txt")
+	}
+	if !foundFile3 {
+		t.Errorf("expected to find file3.txt")
+	}
+	if !foundFile4 {
+		t.Errorf("expected to find file4.txt")
 	}
 }
 
