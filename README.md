@@ -12,6 +12,7 @@ JARVIS MCP implements the Model-Code-Proxy (MCP) architecture to provide a secur
 
 - **Command Execution**: Run shell commands on the local system with proper error handling
 - **File Operations**: Read, write, and manage files on the local system
+- **Directory Visualization**: Generate recursive tree views of file systems as JSON structures
 - **Working Directory Support**: Execute commands in specific directories
 - **Robust Error Handling**: Detailed error messages and validation
 - **Comprehensive Output**: Capture and return both stdout and stderr
@@ -135,6 +136,7 @@ You can configure additional tools for specific file operations. For example:
    - **move_file**: Move or rename files
    - **search_files**: Search for files
    - **get_file_info**: Get file metadata
+   - **directory_tree**: Generate a recursive tree view of files and directories
 
 ### Tool Usage in Conversations
 
@@ -265,6 +267,17 @@ Retrieves detailed metadata about a file or directory.
 - On success: JSON with file metadata (name, size, mode, modification time, etc.)
 - On failure: Error message
 
+##### directory_tree
+
+Generates a recursive tree view of files and directories.
+
+**Parameters:**
+- `path` (string, required): Path for the directory to generate tree from
+
+**Returns:**
+- On success: JSON structure representing the directory tree
+- On failure: Error message
+
 ## Architecture
 
 JARVIS MCP is built on the [MCP Go framework](https://github.com/mark3labs/mcp-go), which implements the Model-Code-Proxy pattern. The architecture consists of:
@@ -278,26 +291,33 @@ JARVIS MCP is built on the [MCP Go framework](https://github.com/mark3labs/mcp-g
 
 ```
 jarvis-mcp/
-├── build.sh                  # Build script
-├── cmd/                      # Application entry points
-│   └── jarvis/               # Main JARVIS MCP application
-│       └── main.go           # Application entry point
-├── pkg/                      # Library packages
-│   ├── shell/                # Shell command execution package
-│   │   └── execute_command.go # Command execution functionality
-│   └── files/                # File operations package
-│       ├── files.go          # Core file operation functions
-│       ├── read_file.go      # Read file tool implementation
-│       ├── write_file.go     # Write file tool implementation
+├── build.sh                    # Build script
+├── cmd/                        # Application entry points
+│   └── jarvis/                 # Main JARVIS MCP application
+│       └── main.go             # Application entry point
+├── pkg/                        # Library packages
+│   ├── shell/                  # Shell command execution package
+│   │   ├── execute_command.go  # Command execution functionality
+│   │   └── shell.go            # Core shell operation functions
+│   ├── utils/                  # Utility functions
+│   │   └── utils.go            # Utility helper functions
+│   └── files/                  # File operations package
+│       ├── files.go            # Core file operation functions
+│       ├── files_test.go       # Tests for file operations
+│       ├── read_file.go        # Read file tool implementation
+│       ├── write_file.go       # Write file tool implementation
 │       ├── create_directory.go # Create directory tool implementation
-│       ├── list_directory.go # List directory tool implementation
-│       ├── move_file.go      # Move file tool implementation
-│       ├── search_files.go   # Search files tool implementation
-│       └── get_file_info.go  # Get file info tool implementation
-├── go.mod                    # Go module definition
-├── go.sum                    # Go module checksums
-└── out/                      # Build outputs (gitignored)
-    └── jarvis-mcp            # Compiled binary
+│       ├── list_directory.go   # List directory tool implementation
+│       ├── move_file.go        # Move file tool implementation
+│       ├── search_files.go     # Search files tool implementation
+│       ├── file_info.go        # Get file info tool implementation
+│       └── directory_tree.go   # Directory tree tool implementation
+├── go.mod                      # Go module definition
+├── go.sum                      # Go module checksums
+├── go.work                     # Go workspace file
+├── go.work.sum                 # Go workspace checksums
+└── out/                        # Build outputs
+    └── jarvis-mcp              # Compiled binary
 ```
 
 ## Security Considerations
@@ -334,7 +354,7 @@ package mypackage
 import (
     "context"
     "errors"
-    
+
     "github.com/mark3labs/mcp-go/mcp"
     "github.com/mark3labs/mcp-go/server"
 )
@@ -355,13 +375,13 @@ func myToolHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallT
     if !ok {
         return nil, errors.New("parameter is required")
     }
-    
+
     // Tool implementation
     result, err := doSomething(param)
     if err != nil {
         return nil, err
     }
-    
+
     return mcp.NewToolResultText(result), nil
 }
 ```
