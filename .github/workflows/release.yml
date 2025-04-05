@@ -4,6 +4,12 @@ on:
   release:
     types: [ created ]
 
+# Add explicit permissions for GitHub token
+permissions:
+  contents: write
+  packages: write
+  releases: write
+
 jobs:
   build:
     name: Build Executables
@@ -61,6 +67,7 @@ jobs:
     name: Publish Release Assets
     needs: build
     runs-on: ubuntu-latest
+    
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -94,3 +101,5 @@ jobs:
             ./release/jarvis-mcp-macos-apple-silicon.tar.gz
             ./release/jarvis-mcp-linux-amd64.tar.gz
             ./release/jarvis-mcp-linux-arm64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
