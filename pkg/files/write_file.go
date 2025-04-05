@@ -8,17 +8,6 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func GetReadFile() (tool mcp.Tool, handler server.ToolHandlerFunc) {
-
-	return mcp.NewTool("read_file",
-		mcp.WithDescription("Read file, given the path"),
-		mcp.WithString("path",
-			mcp.Required(),
-			mcp.Description("Path for the file name to read"),
-		),
-	), readFileHandler
-}
-
 func GetWriteFile() (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("write_file",
 		mcp.WithDescription("Write file, given the path"),
@@ -31,21 +20,6 @@ func GetWriteFile() (tool mcp.Tool, handler server.ToolHandlerFunc) {
 			mcp.Description("Content to write to the file"),
 		),
 	), writeFileHandler
-}
-
-func readFileHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-
-	fileName, ok := request.Params.Arguments["path"].(string)
-	if !ok {
-		return nil, errors.New("file path is required")
-	}
-
-	content, err := readFile(fileName)
-	if err != nil {
-		return nil, err
-	}
-
-	return mcp.NewToolResultText("File read successfully. Content: " + content), nil
 }
 
 func writeFileHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
