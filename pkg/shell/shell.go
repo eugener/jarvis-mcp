@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 )
 
@@ -11,9 +12,20 @@ import (
 // It takes the command string and an optional working directory, runs the command via the shell,
 // and captures both stdout and stderr output.
 func executeCommand(cmd string, workDir string) (string, error) {
-	command := exec.Command("sh", "-c", cmd)
+
+	var command *exec.Cmd
+
+	// Select the appropriate shell based on operating system
+	if runtime.GOOS == "windows" {
+		command = exec.Command("cmd", "/C", cmd)
+	} else {
+		command = exec.Command("sh", "-c", cmd)
+	}
+
+	// Copy the current environment
 	command.Env = os.Environ() // Explicitly copy the current environment
 
+	// Set working directory if provided
 	if strings.TrimSpace(workDir) != "" {
 		dirInfo, err := os.Stat(workDir)
 		if err != nil {
