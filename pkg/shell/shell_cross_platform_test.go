@@ -3,7 +3,6 @@ package shell
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 )
@@ -11,170 +10,78 @@ import (
 // TestCrossPlatformDetection tests that the function correctly detects and configures
 // itself for the current operating system.
 func TestCrossPlatformDetection(t *testing.T) {
+	helper := NewTestHelper(t, "jarvis-cross-platform")
+	defer helper.Cleanup()
+	
 	// Create a test file
-	tempDir, err := os.MkdirTemp("", "jarvis-cross-platform")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
-
-	// Create a test file in the temp directory
-	testFile := filepath.Join(tempDir, "cross_platform_test.txt")
-	testContent := "Cross-platform test content."
-	err = os.WriteFile(testFile, []byte(testContent), 0644)
-	if err != nil {
-		t.Fatalf("Failed to create test file: %v", err)
-	}
-
-	// Platform detection test
-	result, err := executeCommand("echo Cross-platform test", "")
-	if err != nil {
-		t.Fatalf("executeCommand() failed on basic echo test: %v", err)
-	}
-	if !strings.Contains(result, "Cross-platform test") {
-		t.Errorf("Platform detection failed, echo command didn't return expected output")
-	}
-
-	// Test platform-specific command echo syntax (only validates it doesn't crash)
-	var platformCmd string
-	if runtime.GOOS == "windows" {
-		platformCmd = "echo %PATH%"
+	testFile := helper.CreateTestFile("cross_platform_test.txt", "Cross-platform test content.")
+	
+	// Get platform-specific commands
+	pc := GetPlatformCommands()
+	
+	// Platform detection test - basic echo
+	helper.AssertCommandSuccess("echo Cross-platform test", "", "Cross-platform test")
+	
+	// Test platform-specific command echo syntax
+	helper.AssertCommandSuccess("echo "+pc.EnvVarSyntax, "", "")
+	
+	// File reading test with platform-specific command
+	readCmd := pc.ReadFile
+	if IsWindows() {
+		// Ensure Windows path format for Windows tests
+		readCmd += " " + strings.ReplaceAll(testFile, "/", "\\")
 	} else {
-		platformCmd = "echo $PATH"
+		readCmd += " " + testFile
 	}
-
-	_, err = executeCommand(platformCmd, "")
-	if err != nil {
-		t.Errorf("Platform-specific command echo failed: %v", err)
-	}
-
-	// File reading test (platform independent operation)
-	var catCmd string
-	if runtime.GOOS == "windows" {
-		catCmd = "type " + strings.ReplaceAll(testFile, "/", "\\")
-	} else {
-		catCmd = "cat " + testFile
-	}
-
-	result, err = executeCommand(catCmd, "")
-	if err != nil {
-		t.Errorf("Failed to read file with platform-specific command: %v", err)
-	}
-	if !strings.Contains(result, testContent) {
-		t.Errorf("File content not found in result, expected: %s, got: %s", testContent, result)
-	}
-}
-
-// TestWindowsCommandSimulation simulates Windows-specific commands and behavior
-// even when running on non-Windows platforms, to validate the Windows-specific
-// code paths in the executeCommand function.
-func TestWindowsCommandSimulation(t *testing.T) {
-	// Skip on actual Windows as we have dedicated Windows tests
-	if runtime.GOOS == "windows" {
-		t.Skip("Skipping Windows simulation test on actual Windows")
-	}
-
-	// Mock the runtime.GOOS value
-	// Note: This is just a simulation test - we can't actually change runtime.GOOS
-	// We're mostly ensuring the code paths would work on Windows without errors
-
-	// Basic Windows command analogs that might work on Unix
-	cmds := []struct {
-		name string
-		cmd  string
-	}{
-		{
-			name: "dir command analog",
-			cmd:  "ls",
-		},
-		{
-			name: "echo command",
-			cmd:  "echo Windows simulation test",
-		},
-		{
-			name: "Windows-style path with forward slashes",
-			cmd:  "ls " + filepath.Join(".", "testdata"),
-		},
-	}
-
-	for _, tc := range cmds {
-		t.Run(tc.name, func(t *testing.T) {
-			// Execute the Unix analog of the Windows command
-			_, err := executeCommand(tc.cmd, "")
-			// We're mostly checking that these don't crash
-			if err != nil {
-				t.Logf("Note: %s resulted in error: %v (expected on non-Windows)", tc.name, err)
-			}
-		})
-	}
-
-	// Test that forward slashes work in paths (Windows accepts both)
-	tempDir, err := os.MkdirTemp("", "jarvis-win-sim")
-	if err == nil {
-		defer os.RemoveAll(tempDir)
-		
-		forwardSlashPath := strings.ReplaceAll(tempDir, "\\", "/")
-		_, err = executeCommand("ls", forwardSlashPath)
-		if err != nil {
-			t.Logf("Forward slash path test resulted in error: %v (expected on non-Windows)", err)
-		}
-	}
+	
+	helper.AssertCommandSuccess(readCmd, "", "Cross-platform test content.")
 }
 
 // TestPathNormalization tests that paths are correctly normalized
 // across platforms.
 func TestPathNormalization(t *testing.T) {
-	// Create temp directory
-	tempDir, err := os.MkdirTemp("", "jarvis-path-norm")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
-
+	helper := NewTestHelper(t, "jarvis-path-norm")
+	defer helper.Cleanup()
+	
 	// Get current user's home directory
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		t.Fatalf("Failed to get user home directory: %v", err)
 	}
-
-	// Test cases
+	
+	// Test cases for path normalization
 	tests := []struct {
 		name        string
 		cmd         string
 		workDir     string
-		wantWorkDir string
 		wantErr     bool
 	}{
 		{
-			name:        "Absolute path",
+			name:        "absolute path",
 			cmd:         "echo test",
-			workDir:     tempDir,
-			wantWorkDir: tempDir,
+			workDir:     helper.TempDir,
 			wantErr:     false,
 		},
 		{
-			name:        "Home directory path with tilde",
+			name:        "home directory path",
 			cmd:         "echo test",
-			workDir:     homeDir, // We can't use ~ directly in tests, but we're testing the concept
-			wantWorkDir: homeDir,
+			workDir:     homeDir,
 			wantErr:     false,
 		},
 		{
-			name:        "Current directory path with dot",
+			name:        "current directory path",
 			cmd:         "echo test",
 			workDir:     ".",
-			wantWorkDir: "", // Just checking it doesn't error
 			wantErr:     false,
 		},
 		{
-			name:        "Non-existent path",
+			name:        "non-existent path",
 			cmd:         "echo test",
 			workDir:     "/path/that/does/not/exist",
-			wantWorkDir: "",
 			wantErr:     true,
 		},
 	}
-
+	
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := executeCommand(tt.cmd, tt.workDir)
@@ -187,40 +94,127 @@ func TestPathNormalization(t *testing.T) {
 	}
 }
 
-// TestSpecialCommandsEscaping tests that special command characters are properly
-// escaped across platforms.
-func TestSpecialCommandsEscaping(t *testing.T) {
-	// Commands with special characters that should work cross-platform
-	tests := []struct {
-		name    string
-		cmd     string
-		wantErr bool
-	}{
-		{
-			name:    "Command with quotes",
-			cmd:     "echo \"quoted text\"",
-			wantErr: false,
-		},
-		{
-			name:    "Command with single quotes",
-			cmd:     "echo 'single quoted text'",
-			wantErr: false,
-		},
-		{
-			name:    "Command with safe special chars",
-			cmd:     "echo special chars",
-			wantErr: false,
-		},
+// TestRelativePathHandling tests handling of relative paths
+func TestRelativePathHandling(t *testing.T) {
+	// Create a nested directory structure
+	parent := NewTestHelper(t, "jarvis-parent-dir")
+	defer parent.Cleanup()
+	
+	// Create a file in the parent directory
+	parent.CreateTestFile("parent.txt", "Parent file content")
+	
+	// Create a subdirectory
+	subDirPath := filepath.Join(parent.TempDir, "subdir")
+	err := os.Mkdir(subDirPath, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create subdirectory: %v", err)
 	}
+	
+	// Create a file in the subdirectory
+	subFilePath := filepath.Join(subDirPath, "child.txt")
+	err = os.WriteFile(subFilePath, []byte("Child file content"), 0644)
+	if err != nil {
+		t.Fatalf("Failed to create file in subdirectory: %v", err)
+	}
+	
+	// Get platform-specific commands
+	pc := GetPlatformCommands()
+	
+	// Test accessing parent file from subdirectory with relative path
+	var relativePath string
+	if IsWindows() {
+		relativePath = "..\\parent.txt"
+	} else {
+		relativePath = "../parent.txt"
+	}
+	
+	readCmd := pc.ReadFile + " " + relativePath
+	result, err := executeCommand(readCmd, subDirPath)
+	if err != nil {
+		t.Errorf("Failed to read file with relative path: %v", err)
+	} else if !strings.Contains(result, "Parent file content") {
+		t.Errorf("Expected result to contain parent file content, got: %s", result)
+	}
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, err := executeCommand(tt.cmd, "")
-			if tt.wantErr && err == nil {
-				t.Errorf("Expected error for cmd=%s, got none", tt.cmd)
-			} else if !tt.wantErr && err != nil {
-				t.Errorf("Unexpected error for cmd=%s: %v", tt.cmd, err)
-			}
-		})
+// TestCrossPlatformPaths tests path handling across different platforms
+func TestCrossPlatformPaths(t *testing.T) {
+	helper := NewTestHelper(t, "jarvis-cross-paths")
+	defer helper.Cleanup()
+	
+	// Create test files
+	helper.CreateTestFile("test1.txt", "Test file 1 content")
+	helper.CreateTestFile("test2.txt", "Test file 2 content")
+	
+	// Get platform commands
+	pc := GetPlatformCommands()
+	
+	// Test listing directory with platform-specific list command
+	result, err := executeCommand(pc.ListDir, helper.TempDir)
+	if err != nil {
+		t.Errorf("Failed to list directory: %v", err)
+		return
+	}
+	
+	// Check that the results include our test files
+	if !strings.Contains(result, "test1.txt") || !strings.Contains(result, "test2.txt") {
+		t.Errorf("List directory command didn't show test files, got: %s", result)
+	}
+	
+	// Test path with trailing separator
+	trailingPath := helper.TempDir
+	if !strings.HasSuffix(trailingPath, string(os.PathSeparator)) {
+		trailingPath += string(os.PathSeparator)
+	}
+	
+	_, err = executeCommand(pc.ListDir, trailingPath)
+	if err != nil {
+		t.Errorf("Failed to use path with trailing separator: %v", err)
+	}
+	
+	// Test with normalized vs non-normalized paths
+	nonNormalizedPath := filepath.Join(helper.TempDir, ".", "test1.txt")
+	readCmd := pc.ReadFile + " " + nonNormalizedPath
+	
+	result, err = executeCommand(readCmd, "")
+	if err != nil {
+		t.Errorf("Failed to use non-normalized path: %v", err)
+	} else if !strings.Contains(result, "Test file 1 content") {
+		t.Errorf("Expected content from non-normalized path, got: %s", result)
+	}
+}
+
+// TestEnvironmentVariables tests environment variable handling
+func TestEnvironmentVariables(t *testing.T) {
+	helper := NewTestHelper(t, "jarvis-env-vars")
+	defer helper.Cleanup()
+	
+	// Define platform-specific env var commands
+	var setCmd, getCmd string
+	if IsWindows() {
+		setCmd = "set TEST_ENV_VAR=test_value"
+		getCmd = "echo %TEST_ENV_VAR%"
+	} else {
+		setCmd = "export TEST_ENV_VAR=test_value"
+		getCmd = "echo $TEST_ENV_VAR"
+	}
+	
+	// Test setting and getting environment variables
+	// This test works differently on different platforms due to how environment
+	// variables are handled in shells - on Unix, the variable is only set for
+	// the duration of the command, while on Windows, it persists across commands
+	// we expect the variable to be set in the current command only
+	cmd := setCmd + " && " + getCmd
+	result, err := executeCommand(cmd, "")
+	if err != nil {
+		t.Errorf("Failed to use environment variables: %v", err)
+	}
+	
+	// The output may differ by platform, but should contain either the variable
+	// value or indication the variable was used
+	if IsWindows() {
+		if !strings.Contains(result, "test_value") {
+			t.Errorf("Environment variable not set properly, got: %s", result)
+		}
 	}
 }

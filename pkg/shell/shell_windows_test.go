@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package shell
@@ -10,23 +11,14 @@ import (
 )
 
 // TestWindowsSpecificCommands tests Windows-specific command execution
-// This test will only run on Windows due to the build tag at the top of the file
+// This test will only run on Windows due to the build tag
 func TestWindowsSpecificCommands(t *testing.T) {
-	// Create a temporary directory for testing
-	tempDir, err := os.MkdirTemp("", "jarvis-mcp-windows-test")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
-
-	// Create a test file in the temp directory
-	testFile := filepath.Join(tempDir, "test.txt")
-	testContent := "Hello, JARVIS MCP on Windows!"
-	err = os.WriteFile(testFile, []byte(testContent), 0644)
-	if err != nil {
-		t.Fatalf("Failed to create test file: %v", err)
-	}
-
+	helper := NewTestHelper(t, "jarvis-mcp-windows-test")
+	defer helper.Cleanup()
+	
+	// Create a test file
+	testFile := helper.CreateTestFile("test.txt", "Hello, JARVIS MCP on Windows!")
+	
 	// Windows-specific test cases
 	tests := []struct {
 		name        string
@@ -38,16 +30,16 @@ func TestWindowsSpecificCommands(t *testing.T) {
 		{
 			name:        "dir command",
 			cmd:         "dir",
-			workDir:     tempDir,
+			workDir:     helper.TempDir,
 			wantErr:     false,
 			wantContain: "test.txt",
 		},
 		{
 			name:        "type command (Windows equivalent of cat)",
 			cmd:         "type test.txt",
-			workDir:     tempDir,
+			workDir:     helper.TempDir,
 			wantErr:     false,
-			wantContain: testContent,
+			wantContain: "Hello, JARVIS MCP on Windows!",
 		},
 		{
 			name:        "echo with Windows environment variable",
@@ -59,7 +51,7 @@ func TestWindowsSpecificCommands(t *testing.T) {
 		{
 			name:        "Windows command with pipe",
 			cmd:         "dir | find \"test\"",
-			workDir:     tempDir,
+			workDir:     helper.TempDir,
 			wantErr:     false,
 			wantContain: "test.txt",
 		},
@@ -80,12 +72,12 @@ func TestWindowsSpecificCommands(t *testing.T) {
 		{
 			name:        "command with backslash path",
 			cmd:         "echo Hello > output.txt && type output.txt",
-			workDir:     tempDir,
+			workDir:     helper.TempDir,
 			wantErr:     false,
 			wantContain: "Hello",
 		},
 	}
-
+	
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := executeCommand(tt.cmd, tt.workDir)
@@ -110,7 +102,6 @@ func TestWindowsSpecificCommands(t *testing.T) {
 }
 
 // TestWindowsPathHandling tests Windows-specific path handling
-// This test will only run on Windows due to the build tag at the top of the file
 func TestWindowsPathHandling(t *testing.T) {
 	// Test Windows paths with backslashes
 	testCases := []struct {
@@ -138,7 +129,7 @@ func TestWindowsPathHandling(t *testing.T) {
 			wantErr: false,
 		},
 	}
-
+	
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			_, err := executeCommand(tc.cmd, tc.workDir)
@@ -152,15 +143,10 @@ func TestWindowsPathHandling(t *testing.T) {
 }
 
 // TestWindowsCommandCharacters tests Windows-specific command characters and syntax
-// This test will only run on Windows due to the build tag at the top of the file
 func TestWindowsCommandCharacters(t *testing.T) {
-	// Create temp dir
-	tempDir, err := os.MkdirTemp("", "jarvis-windows-chars")
-	if err != nil {
-		t.Fatalf("Failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(tempDir)
-
+	helper := NewTestHelper(t, "jarvis-windows-chars")
+	defer helper.Cleanup()
+	
 	tests := []struct {
 		name    string
 		cmd     string
@@ -202,17 +188,17 @@ func TestWindowsCommandCharacters(t *testing.T) {
 			wantErr: false,
 		},
 	}
-
+	
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := executeCommand(tt.cmd, tempDir)
-
+			result, err := executeCommand(tt.cmd, helper.TempDir)
+			
 			if tt.wantErr && err == nil {
 				t.Errorf("Expected error for command %s but got none", tt.cmd)
 			} else if !tt.wantErr && err != nil {
 				t.Errorf("Unexpected error for command %s: %v", tt.cmd, err)
 			}
-
+			
 			// For successful commands, verify we got output
 			if !tt.wantErr && err == nil && len(result) == 0 {
 				t.Errorf("Command succeeded but returned no output: %s", tt.cmd)
