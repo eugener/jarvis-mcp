@@ -24,7 +24,7 @@ func executeCommand(cmd string, workDir string) (string, error) {
 		}
 
 		if !dirInfo.IsDir() {
-			return "", fmt.Errorf("'%s' is not a directory", workDir)
+			return "", fmt.Errorf("path '%s' exists but is not a directory", workDir)
 		}
 
 		command.Dir = workDir
@@ -35,15 +35,14 @@ func executeCommand(cmd string, workDir string) (string, error) {
 	outputStr := string(output)
 
 	// Format the response
-	var resultText string
 	if err != nil {
 		// Return both the error and any output
-		resultText = fmt.Sprintf("Command failed: %s\n\nOutput:\n%s\n\nError: %v",
+		resultText := fmt.Sprintf("Command failed: %s\n\nOutput:\n%s\n\nError: %v",
 			cmd, outputStr, err)
-	} else {
-		resultText = fmt.Sprintf("Command executed successfully: %s\n\nOutput:\n%s",
-			cmd, outputStr)
+		return resultText, err
 	}
 
+	resultText := fmt.Sprintf("Command executed successfully: %s\n\nOutput:\n%s",
+		cmd, outputStr)
 	return resultText, nil
 }
