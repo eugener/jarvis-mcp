@@ -1,12 +1,12 @@
 # JARVIS MCP
 
-> Just A Rather Very Intelligent System - Machine Command Proxy
+> Just A Rather Very Intelligent System - MCP Server
 
 JARVIS MCP is a lightweight server that provides secure access to local machine commands and file operations via a standardized API interface. Inspired by Tony Stark's AI assistant, JARVIS MCP acts as a bridge between applications and your local system.
 
 ## Overview
 
-JARVIS MCP implements the Model-Code-Proxy (MCP) architecture to provide a secure, standardized way for applications to execute commands and perform file operations on a local machine. It serves as an intermediary layer that accepts requests through a well-defined API, executes operations in a controlled environment, and returns formatted results.
+JARVIS MCP implements the Model Context Protocol (MCP) architecture to provide a secure, standardized way for applications to execute commands and perform file operations on a local machine. It serves as an intermediary layer that accepts requests through a well-defined API, executes operations in a controlled environment, and returns formatted results.
 
 ## Features
 
