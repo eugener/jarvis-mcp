@@ -10,14 +10,14 @@ import (
 
 func GetMoveFile() (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("move_file",
-		mcp.WithDescription("Move or rename files and directories"),
+		mcp.WithDescription("Move or rename files and directories to a specified location"),
 		mcp.WithString("source",
 			mcp.Required(),
-			mcp.Description("Source path of the file or directory to move"),
+			mcp.Description("The full path of the file or directory to be moved or renamed"),
 		),
 		mcp.WithString("destination",
 			mcp.Required(),
-			mcp.Description("Destination path where the file or directory will be moved to"),
+			mcp.Description("The target path where the file or directory should be moved or renamed to"),
 		),
 	), moveFileHandler
 }

@@ -11,10 +11,10 @@ import (
 func GetReadFile() (tool mcp.Tool, handler server.ToolHandlerFunc) {
 
 	return mcp.NewTool("read_file",
-		mcp.WithDescription("Read file, given the path"),
+		mcp.WithDescription("Reads the contents of a file specified by its path"),
 		mcp.WithString("path",
 			mcp.Required(),
-			mcp.Description("Path for the file name to read"),
+			mcp.Description("The full path to the file that should be read"),
 		),
 	), readFileHandler
 }

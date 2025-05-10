@@ -34,8 +34,7 @@ func writeFileHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.Ca
 		return nil, errors.New("file content is required")
 	}
 
-	err := writeFile(fileName, content)
-	if err != nil {
+	if err := writeFile(fileName, content); err != nil {
 		return nil, err
 	}
 

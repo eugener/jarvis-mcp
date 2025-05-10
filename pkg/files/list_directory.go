@@ -11,14 +11,13 @@ import (
 
 func GetListDirectory() (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("list_directory",
-		mcp.WithDescription("Get a detailed listing of all files and directories in a specified path"),
+		mcp.WithDescription("Retrieve a comprehensive listing of all files and subdirectories within a specified directory path"),
 		mcp.WithString("path",
 			mcp.Required(),
-			mcp.Description("Path for the directory to list"),
+			mcp.Description("The absolute or relative path of the directory to be listed"),
 		),
 	), listDirectoryHandler
 }
-
 func listDirectoryHandler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	dirPath, ok := request.Params.Arguments["path"].(string)
 	if !ok {

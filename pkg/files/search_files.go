@@ -11,14 +11,14 @@ import (
 
 func GetSearchFiles() (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("search_files",
-		mcp.WithDescription("Recursively search for files and directories matching a pattern"),
+		mcp.WithDescription("Perform a recursive search to locate files and directories that match a specified pattern"),
 		mcp.WithString("path",
 			mcp.Required(),
-			mcp.Description("Starting path for the search"),
+			mcp.Description("The root directory path where the search will begin"),
 		),
 		mcp.WithString("pattern",
 			mcp.Required(),
-			mcp.Description("Search pattern to match file and directory names"),
+			mcp.Description("The pattern used to identify matching file and directory names"),
 		),
 	), searchFilesHandler
 }
