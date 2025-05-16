@@ -10,10 +10,10 @@ import (
 
 func GetCreateDirectory() (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("create_directory",
-		mcp.WithDescription("Create a new directory or ensure a directory exists"),
+		mcp.WithDescription("Create or verify the existence of a directory at the specified path"),
 		mcp.WithString("path",
 			mcp.Required(),
-			mcp.Description("Path for the directory to create"),
+			mcp.Description("The filesystem path where the directory should be created or verified"),
 		),
 	), createDirectoryHandler
 }

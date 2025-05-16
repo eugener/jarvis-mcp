@@ -10,10 +10,10 @@ import (
 
 func GetDirectoryTree() (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("directory_tree",
-		mcp.WithDescription("Get a recursive tree view of files and directories as a JSON structure"),
+		mcp.WithDescription("Retrieve a detailed, recursive tree structure of files and directories in JSON format"),
 		mcp.WithString("path",
 			mcp.Required(),
-			mcp.Description("Path for the directory to generate tree from"),
+			mcp.Description("The file system path of the directory for which to generate the tree structure"),
 		),
 	), directoryTreeHandler
 }

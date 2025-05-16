@@ -12,10 +12,10 @@ import (
 
 func GetFileInfo() (tool mcp.Tool, handler server.ToolHandlerFunc) {
 	return mcp.NewTool("get_file_info",
-		mcp.WithDescription("Retrieve detailed metadata about a file or directory"),
+		mcp.WithDescription("Retrieve comprehensive metadata and attributes for a specified file or directory"),
 		mcp.WithString("path",
 			mcp.Required(),
-			mcp.Description("Path for the file or directory to get information about"),
+			mcp.Description("The absolute or relative path of the file or directory to retrieve metadata for"),
 		),
 	), getFileInfoHandler
 }
